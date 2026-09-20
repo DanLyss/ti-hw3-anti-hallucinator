@@ -12,5 +12,11 @@ models:
     provider: qwen
     model_name: qwen-plus
     temperature: 0.7
+    # Если регистрация в DashScope окажется муторной — можно дёргать Qwen через
+    # openrouter.ai (один ключ без верификации по телефону, OpenAI-совместимый REST).
+    # Тогда: base_url: https://openrouter.ai/api/v1, model_name: qwen/qwen-2.5-72b-instruct
+    # (или другой актуальный слаг с openrouter.ai/models — уточнить перед запуском),
+    # ключ всё равно кладётся в QWEN_API_KEY в .env.
+    # base_url: https://openrouter.ai/api/v1
 
 runs_per_testcase: 50

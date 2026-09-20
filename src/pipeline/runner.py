@@ -45,17 +45,23 @@ def run_all(
 def _build_client(cfg: dict) -> LLMClient:
     provider = cfg["provider"]
     temperature = cfg.get("temperature", 0.7)
+    # base_url можно переопределить прямо в config/models.yaml, не трогая код — например,
+    # чтобы дёргать Qwen через агрегатор вроде OpenRouter вместо прямого DashScope API.
+    base_url_override = cfg.get("base_url")
     if provider == "openai":
+        kwargs = {"base_url": base_url_override} if base_url_override else {}
         return OpenAIClient(
-            api_key=os.environ["OPENAI_API_KEY"], model_name=cfg["model_name"], temperature=temperature
+            api_key=os.environ["OPENAI_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
         )
     if provider == "deepseek":
+        kwargs = {"base_url": base_url_override} if base_url_override else {}
         return DeepSeekClient(
-            api_key=os.environ["DEEPSEEK_API_KEY"], model_name=cfg["model_name"], temperature=temperature
+            api_key=os.environ["DEEPSEEK_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
         )
     if provider == "qwen":
+        kwargs = {"base_url": base_url_override} if base_url_override else {}
         return QwenClient(
-            api_key=os.environ["QWEN_API_KEY"], model_name=cfg["model_name"], temperature=temperature
+            api_key=os.environ["QWEN_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
         )
     raise ValueError(f"неизвестный provider в config/models.yaml: {provider}")
 
