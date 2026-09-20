@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 
 import yaml
@@ -13,6 +14,7 @@ from src.testcases import TESTCASES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_RAW = PROJECT_ROOT / "data" / "raw"
+REQUEST_PACING_SECONDS = 0.5  # небольшая пауза между запросами, чтобы не спровоцировать 429
 
 
 def run_for_model(
@@ -20,6 +22,7 @@ def run_for_model(
     client: LLMClient,
     runs_per_testcase: int,
     out_root: Path = DEFAULT_DATA_RAW,
+    pacing_seconds: float = REQUEST_PACING_SECONDS,
 ) -> None:
     for testcase_id, testcase in TESTCASES.items():
         out_dir = out_root / model_name / testcase_id
@@ -31,15 +34,17 @@ def run_for_model(
                 continue  # не тратим платные запросы повторно на уже собранный прогон
             response = client.generate(prompt)
             out_path.write_text(response, encoding="utf-8")
+            time.sleep(pacing_seconds)
 
 
 def run_all(
     clients: dict[str, LLMClient],
     runs_per_testcase: int = 50,
     out_root: Path = DEFAULT_DATA_RAW,
+    pacing_seconds: float = REQUEST_PACING_SECONDS,
 ) -> None:
     for model_name, client in clients.items():
-        run_for_model(model_name, client, runs_per_testcase, out_root)
+        run_for_model(model_name, client, runs_per_testcase, out_root, pacing_seconds)
 
 
 def _build_client(cfg: dict) -> LLMClient:

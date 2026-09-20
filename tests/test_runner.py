@@ -14,7 +14,7 @@ class _FakeClient(LLMClient):
 
 def test_run_for_model_writes_one_file_per_run(tmp_path):
     client = _FakeClient()
-    run_for_model("fake-model", client, runs_per_testcase=2, out_root=tmp_path)
+    run_for_model("fake-model", client, runs_per_testcase=2, out_root=tmp_path, pacing_seconds=0)
 
     for testcase_id in TESTCASES:
         out_dir = tmp_path / "fake-model" / testcase_id
@@ -32,7 +32,7 @@ def test_run_for_model_skips_already_collected_runs(tmp_path):
     out_dir.mkdir(parents=True)
     (out_dir / "run_000.txt").write_text("already here", encoding="utf-8")
 
-    run_for_model("fake-model", client, runs_per_testcase=2, out_root=tmp_path)
+    run_for_model("fake-model", client, runs_per_testcase=2, out_root=tmp_path, pacing_seconds=0)
 
     assert (out_dir / "run_000.txt").read_text(encoding="utf-8") == "already here"
     assert client.calls == 2 * len(TESTCASES) - 1

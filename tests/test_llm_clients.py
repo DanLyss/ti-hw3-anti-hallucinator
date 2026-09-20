@@ -64,6 +64,27 @@ def test_generate_retries_on_5xx_then_succeeds(monkeypatch):
     assert calls["n"] == 3
 
 
+def test_generate_respects_retry_after_header_on_429(monkeypatch):
+    sleeps: list[float] = []
+    monkeypatch.setattr(http_utils.time, "sleep", sleeps.append)
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] < 2:
+            return httpx.Response(429, headers={"Retry-After": "7"})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "ok"}}]})
+
+    client = OpenAICompatibleClient(
+        base_url="https://example.test/v1",
+        api_key="k",
+        model_name="m",
+        transport=httpx.MockTransport(handler),
+    )
+    assert client.generate("hi") == "ok"
+    assert sleeps == [7.0]
+
+
 def test_generate_raises_after_exhausting_retries(monkeypatch):
     monkeypatch.setattr(http_utils.time, "sleep", lambda seconds: None)
 
