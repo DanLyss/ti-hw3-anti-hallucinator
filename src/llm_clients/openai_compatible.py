@@ -13,12 +13,14 @@ class OpenAICompatibleClient(LLMClient):
         api_key: str,
         model_name: str,
         temperature: float = 0.7,
+        max_tokens: int = 4096,
         transport: httpx.BaseTransport | None = None,
     ):
         self.base_url = base_url
         self.api_key = api_key
         self.model_name = model_name
         self.temperature = temperature
+        self.max_tokens = max_tokens
         self._transport = transport  # только для тестов (подмена сети)
 
     def generate(self, prompt: str) -> str:
@@ -31,6 +33,7 @@ class OpenAICompatibleClient(LLMClient):
                     "model": self.model_name,
                     "messages": [{"role": "user", "content": prompt}],
                     "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
                 },
             )
         return response.json()["choices"][0]["message"]["content"]

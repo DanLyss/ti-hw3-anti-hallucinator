@@ -12,6 +12,7 @@ def test_generate_sends_prompt_and_returns_content():
         payload = json.loads(request.content)
         assert payload["model"] == "gpt-x"
         assert payload["messages"] == [{"role": "user", "content": "hello"}]
+        assert payload["max_tokens"] == 123
         assert request.headers["Authorization"] == "Bearer test-key"
         return httpx.Response(200, json={"choices": [{"message": {"content": "n\nm\n..."}}]})
 
@@ -19,6 +20,7 @@ def test_generate_sends_prompt_and_returns_content():
         base_url="https://example.test/v1",
         api_key="test-key",
         model_name="gpt-x",
+        max_tokens=123,
         transport=httpx.MockTransport(handler),
     )
     assert client.generate("hello") == "n\nm\n..."

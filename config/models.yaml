@@ -2,7 +2,11 @@
 models:
   chatgpt:
     provider: openai
-    model_name: gpt-6
+    # GPT-6 Astra стоит $10/$50 за 1M токенов (вход/выход) — для студенческого бюджета
+    # неоправданно дорого на 750 запросов. Задание не требует именно GPT-6 (в табличке
+    # ПДФ "GPT-6" — просто пример названия колонки), поэтому берём gpt-4o-mini:
+    # $0.15/$0.60 за 1M — ~80x дешевле, тот же провайдер (OpenAI), тот же ключ.
+    model_name: gpt-4o-mini
     temperature: 0.7
   deepseek:
     provider: deepseek
@@ -10,13 +14,13 @@ models:
     temperature: 0.7
   qwen:
     provider: qwen
-    model_name: qwen-plus
+    # Ключ QWEN_API_KEY — от OpenRouter (sk-or-v1-...), не от DashScope напрямую,
+    # поэтому base_url и слаг модели — под OpenRouter. Слаг сверен напрямую через
+    # https://openrouter.ai/api/v1/models на 2026-09-20 (бесплатный тариф, 0$ prompt/completion).
+    # Если упрёмся в rate-limit бесплатного тарифа на 750 запросах — переключить на
+    # платный "qwen/qwen3.8-27b" (тот же provider/base_url, тот же ключ).
+    base_url: https://openrouter.ai/api/v1
+    model_name: qwen/qwen3.8-27b:free
     temperature: 0.7
-    # Если регистрация в DashScope окажется муторной — можно дёргать Qwen через
-    # openrouter.ai (один ключ без верификации по телефону, OpenAI-совместимый REST).
-    # Тогда: base_url: https://openrouter.ai/api/v1, model_name: qwen/qwen-2.5-72b-instruct
-    # (или другой актуальный слаг с openrouter.ai/models — уточнить перед запуском),
-    # ключ всё равно кладётся в QWEN_API_KEY в .env.
-    # base_url: https://openrouter.ai/api/v1
 
 runs_per_testcase: 50

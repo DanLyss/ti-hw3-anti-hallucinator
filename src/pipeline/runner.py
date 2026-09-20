@@ -45,30 +45,43 @@ def run_all(
 def _build_client(cfg: dict) -> LLMClient:
     provider = cfg["provider"]
     temperature = cfg.get("temperature", 0.7)
+    max_tokens = cfg.get("max_tokens", 4096)
     # base_url можно переопределить прямо в config/models.yaml, не трогая код — например,
     # чтобы дёргать Qwen через агрегатор вроде OpenRouter вместо прямого DashScope API.
     base_url_override = cfg.get("base_url")
     if provider == "openai":
         kwargs = {"base_url": base_url_override} if base_url_override else {}
         return OpenAIClient(
-            api_key=os.environ["OPENAI_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
+            api_key=os.environ["OPENAI_API_KEY"],
+            model_name=cfg["model_name"],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs,
         )
     if provider == "deepseek":
         kwargs = {"base_url": base_url_override} if base_url_override else {}
         return DeepSeekClient(
-            api_key=os.environ["DEEPSEEK_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
+            api_key=os.environ["DEEPSEEK_API_KEY"],
+            model_name=cfg["model_name"],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs,
         )
     if provider == "qwen":
         kwargs = {"base_url": base_url_override} if base_url_override else {}
         return QwenClient(
-            api_key=os.environ["QWEN_API_KEY"], model_name=cfg["model_name"], temperature=temperature, **kwargs
+            api_key=os.environ["QWEN_API_KEY"],
+            model_name=cfg["model_name"],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            **kwargs
         )
     raise ValueError(f"неизвестный provider в config/models.yaml: {provider}")
 
 
 def main() -> None:
     load_dotenv()
-    config = yaml.safe_load((PROJECT_ROOT / "config" / "models.yaml").read_text())
+    config = yaml.safe_load((PROJECT_ROOT / "config" / "models.yaml").read_text(encoding="utf-8"))
     clients = {name: _build_client(cfg) for name, cfg in config["models"].items()}
     run_all(clients, runs_per_testcase=config.get("runs_per_testcase", 50))
 
