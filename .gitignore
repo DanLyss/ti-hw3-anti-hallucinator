@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+*.egg-info/
+
+# сырые ответы моделей и промежуточные результаты — не коммитим до Этапа 4/5,
+# когда решим финальный формат хранения (см. ARCHITECTURE.md §5)
+/data/raw/*
+!/data/raw/.gitkeep
+/data/results/*
+!/data/results/.gitkeep
