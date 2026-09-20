@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 
 from src.llm_clients.base import LLMClient
 from src.llm_clients.deepseek_client import DeepSeekClient
-from src.llm_clients.gigachat_client import GigaChatClient
 from src.llm_clients.openai_client import OpenAIClient
+from src.llm_clients.qwen_client import QwenClient
 from src.prompt_builder import build_prompt
 from src.testcases import TESTCASES
 
@@ -53,13 +53,9 @@ def _build_client(cfg: dict) -> LLMClient:
         return DeepSeekClient(
             api_key=os.environ["DEEPSEEK_API_KEY"], model_name=cfg["model_name"], temperature=temperature
         )
-    if provider == "gigachat":
-        return GigaChatClient(
-            client_id=os.environ["GIGACHAT_CLIENT_ID"],
-            client_secret=os.environ["GIGACHAT_CLIENT_SECRET"],
-            model_name=cfg["model_name"],
-            temperature=temperature,
-            ca_bundle_path=os.environ.get("GIGACHAT_CA_BUNDLE"),
+    if provider == "qwen":
+        return QwenClient(
+            api_key=os.environ["QWEN_API_KEY"], model_name=cfg["model_name"], temperature=temperature
         )
     raise ValueError(f"неизвестный provider в config/models.yaml: {provider}")
 

@@ -1,7 +1,7 @@
 # Архитектура: Анти-галлюцинатор, часть I
 
 Домашка 3 по ТИ (см. [TCS_2026_hw3.pdf](TCS_2026_hw3.pdf)). Язык реализации — Python.
-Модели: **DeepSeek**, **GigaChat**, **ChatGPT (GPT-6 / OpenAI API)**.
+Модели: **DeepSeek**, **Qwen**, **ChatGPT (GPT-6 / OpenAI API)**.
 
 ## 1. Общая идея пайплайна
 
@@ -9,7 +9,7 @@
 testcases.py (5 фиксированных описаний)
         │
         ▼
-PromptBuilder ──► LLMClient (DeepSeek | GigaChat | OpenAI) ──► сырой текстовый ответ
+PromptBuilder ──► LLMClient (DeepSeek | Qwen | OpenAI) ──► сырой текстовый ответ
         │                                                              │
         │                                                    сохраняем как есть в файл
         ▼                                                              │
@@ -50,7 +50,8 @@ ailab/
 │   │   ├── base.py                # abstract LLMClient.generate(prompt) -> str
 │   │   ├── openai_client.py       # ChatGPT / GPT-6
 │   │   ├── deepseek_client.py     # DeepSeek (OpenAI-совместимый REST)
-│   │   └── gigachat_client.py     # GigaChat (OAuth2 токен + self-signed сертификат Минцифры)
+│   │   ├── qwen_client.py         # Qwen (DashScope, OpenAI-совместимый REST)
+│   │   └── openai_compatible.py   # общая реализация для трёх клиентов выше
 │   ├── automaton/
 │   │   ├── model.py               # dataclass Automaton (n, m, starts, finals, transitions)
 │   │   ├── parser.py              # текст файла -> Automaton | ParseError(список нарушений)
@@ -97,9 +98,12 @@ class Automaton:
 - `sample_strings() -> list[tuple[str, bool]]` — набор строк с ожидаемым вердиктом (позитивные/негативные), используется симулятором.
 
 ### 3.3 LLMClient
-Общий интерфейс `generate(prompt: str) -> str`, три реализации отличаются только транспортом:
-- OpenAI/DeepSeek — обычный REST с Bearer-токеном (DeepSeek API OpenAI-совместим, поэтому клиенты почти идентичны);
-- GigaChat — отдельно, т.к. требует получения OAuth-токена по client_id/secret и его периодического обновления.
+Общий интерфейс `generate(prompt: str) -> str`. Все три модели — ChatGPT, DeepSeek и Qwen —
+имеют OpenAI-совместимый REST (`/chat/completions` + Bearer-токен), поэтому у них общая
+реализация `OpenAICompatibleClient`, а `openai_client.py`/`deepseek_client.py`/`qwen_client.py`
+— это тонкие обёртки только с своим `base_url` (изначально выбирали GigaChat вместо Qwen, но
+отказались от него: там ещё и OAuth2 client-credentials, и самоподписанный сертификат
+Минцифры для TLS — заметно больше кода и точек отказа ради третьей модели).
 
 Retry с экспоненциальной паузой на 429/5xx, таймаут на запрос. Ответ сохраняется в `data/raw/...` **до** парсинга — если парсинг упадёт, сырой текст всё равно останется на диске для отладки и для сдачи.
 

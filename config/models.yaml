@@ -8,9 +8,9 @@ models:
     provider: deepseek
     model_name: deepseek-chat
     temperature: 0.7
-  gigachat:
-    provider: gigachat
-    model_name: GigaChat
+  qwen:
+    provider: qwen
+    model_name: qwen-plus
     temperature: 0.7
 
 runs_per_testcase: 50
