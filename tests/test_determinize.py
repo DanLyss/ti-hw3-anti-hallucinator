@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from src.automaton.determinize import determinize
+import pytest
+
+from src.automaton.determinize import TooManyStatesError, determinize
 from src.automaton.model import Automaton
 from src.automaton.parser import parse
 from src.automaton.simulator import check_correctness, simulate
@@ -70,3 +72,17 @@ def test_empty_start_set_gives_single_dead_state():
     assert dfa.n == 1
     assert dfa.finals == set()
     assert dfa.transitions == {}
+
+
+def test_raises_when_exceeding_max_states():
+    # Обобщение фикстуры 4th_symbol_correct.txt (k-й символ с конца): NFA из k+1 состояний,
+    # минимальный DFA для неё требует ровно 2^k состояний (классический пример
+    # экспоненциального взрыва при детерминизации). При k=5 это 32 — ловим раньше предела.
+    k = 5
+    transitions = {(0, 0): {0}, (0, 1): {0, 1}}
+    for i in range(1, k):
+        transitions[(i, 0)] = {i + 1}
+        transitions[(i, 1)] = {i + 1}
+    nfa = Automaton(n=k + 1, m=2, starts={0}, finals={k}, transitions=transitions)
+    with pytest.raises(TooManyStatesError):
+        determinize(nfa, max_states=10)

@@ -3,7 +3,13 @@ from collections import deque
 from src.automaton.model import Automaton
 
 
-def determinize(automaton: Automaton) -> Automaton:
+class TooManyStatesError(Exception):
+    """NFA->DFA превысил разумный лимит состояний — скорее всего, вырожденный/
+    галлюцинированный вход (в реальных данных уже встречался автомат на 280+ строк
+    переходов), а не осмысленная задача на построение подмножеств."""
+
+
+def determinize(automaton: Automaton, max_states: int = 20_000) -> Automaton:
     """NFA -> DFA построением подмножеств. Идём лениво от стартового множества (BFS),
     открывая только реально достижимые подмножества — никогда не перебираем все 2^n
     заранее. Если для (подмножество, символ) объединение переходов пусто, переход просто
@@ -27,6 +33,10 @@ def determinize(automaton: Automaton) -> Automaton:
             if not target:
                 continue
             if target not in subset_to_index:
+                if len(subset_to_index) >= max_states:
+                    raise TooManyStatesError(
+                        f"NFA->DFA превысил {max_states} состояний, остановлено"
+                    )
                 subset_to_index[target] = len(subset_to_index)
                 queue.append(target)
             transitions[(state_index, symbol)] = {subset_to_index[target]}

@@ -34,3 +34,11 @@ def validate(automaton: Automaton) -> tuple[bool, list[str]]:
                     )
 
     return (len(violations) == 0, violations)
+
+
+def is_deterministic(automaton: Automaton) -> bool:
+    """DFA: ровно одно стартовое состояние и не более одного перехода на (состояние, символ).
+    Частично заданный DFA (не для каждой пары есть переход) — всё ещё детерминированный."""
+    if len(automaton.starts) != 1:
+        return False
+    return all(len(targets) <= 1 for targets in automaton.transitions.values())
