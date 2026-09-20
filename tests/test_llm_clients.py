@@ -26,6 +26,24 @@ def test_generate_sends_prompt_and_returns_content():
     assert client.generate("hello") == "n\nm\n..."
 
 
+def test_generate_returns_empty_string_when_content_is_null():
+    # Модель может выработать весь max_tokens на reasoning и не оставить ничего на content
+    # (finish_reason="length", content=null) — это валидный результат, а не сбой запроса.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"choices": [{"finish_reason": "length", "message": {"content": None}}]},
+        )
+
+    client = OpenAICompatibleClient(
+        base_url="https://example.test/v1",
+        api_key="k",
+        model_name="m",
+        transport=httpx.MockTransport(handler),
+    )
+    assert client.generate("hi") == ""
+
+
 def test_generate_retries_on_5xx_then_succeeds(monkeypatch):
     monkeypatch.setattr(http_utils.time, "sleep", lambda seconds: None)
     calls = {"n": 0}

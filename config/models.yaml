@@ -2,25 +2,39 @@
 models:
   chatgpt:
     provider: openai
-    # GPT-6 Astra стоит $10/$50 за 1M токенов (вход/выход) — для студенческого бюджета
-    # неоправданно дорого на 750 запросов. Задание не требует именно GPT-6 (в табличке
-    # ПДФ "GPT-6" — просто пример названия колонки), поэтому берём gpt-4o-mini:
-    # $0.15/$0.60 за 1M — ~80x дешевле, тот же провайдер (OpenAI), тот же ключ.
-    model_name: gpt-4o-mini
+    # У официального OpenAI-ключа баланс $0 ("no credits remaining"). GPT-6 Astra вдобавок
+    # стоит $10/$50 за 1M токенов — дорого само по себе. Решение то же, что и для DeepSeek/
+    # Qwen ниже: OpenRouter, ключ с $50 бесплатного кредита до 20.10.2026 (задание не требует
+    # именно версии GPT-6 — в табличке ПДФ это просто пример названия колонки).
+    base_url: https://openrouter.ai/api/v1
+    model_name: openai/gpt-4o-mini
     temperature: 0.7
+    max_tokens: 2048
   deepseek:
     provider: deepseek
-    model_name: deepseek-chat
+    # У официального DeepSeek API тоже баланс $0 (Insufficient Balance). Тот же ключ
+    # OpenRouter, что и у остальных двух моделей (см. GET https://openrouter.ai/api/v1/key).
+    # deepseek-v4-flash — reasoning-модель, на реальном промпте сжигала весь max_tokens на
+    # внутренние "размышления" и не оставляла ничего на content (проверено, content=null,
+    # finish_reason=length). deepseek-chat — не reasoning, отвечает сразу автоматом,
+    # 0 reasoning_tokens на тесте, $0.00016 за реальный запрос.
+    base_url: https://openrouter.ai/api/v1
+    model_name: deepseek/deepseek-chat
     temperature: 0.7
+    max_tokens: 2048
   qwen:
     provider: qwen
-    # Ключ QWEN_API_KEY — от OpenRouter (sk-or-v1-...), не от DashScope напрямую,
-    # поэтому base_url и слаг модели — под OpenRouter. Слаг сверен напрямую через
-    # https://openrouter.ai/api/v1/models на 2026-09-20 (бесплатный тариф, 0$ prompt/completion).
-    # Если упрёмся в rate-limit бесплатного тарифа на 750 запросах — переключить на
-    # платный "qwen/qwen3.8-27b" (тот же provider/base_url, тот же ключ).
+    # :free вариант отпадает не только из-за 429 (перегрузка shared-пула), но и потому что
+    # у бесплатных моделей на OpenRouter лимит 50 запросов/день суммарно — а нам нужно 250
+    # (5 тесткейсов x 50). qwen/qwen3.8-27b (без суффикса) оказался reasoning-моделью —
+    # на реальном dry run 3 из 5 тесткейсов вернули ПУСТОЙ ответ (весь max_tokens=1500 ушёл
+    # на скрытые "размышления", деньги при этом всё равно списались). qwen3-30b-a3b-instruct-2507
+    # ("-instruct", не "-thinking") отвечает сразу, 0 reasoning_tokens на обоих проверенных
+    # тесткейсах (в т.ч. на employer/intersection, где старая модель молчала), и вдобавок
+    # дешевле: $0.048/$0.193 за 1M. Ключ — OpenRouter (sk-or-v1-...), $50 кредита до 20.10.2026.
     base_url: https://openrouter.ai/api/v1
-    model_name: qwen/qwen3.8-27b:free
+    model_name: qwen/qwen3-30b-a3b-instruct-2507
     temperature: 0.7
+    max_tokens: 2048
 
 runs_per_testcase: 50

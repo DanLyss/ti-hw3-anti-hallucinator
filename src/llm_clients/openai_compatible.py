@@ -36,4 +36,8 @@ class OpenAICompatibleClient(LLMClient):
                     "max_tokens": self.max_tokens,
                 },
             )
-        return response.json()["choices"][0]["message"]["content"]
+        # content бывает null, если модель выработала весь max_tokens на reasoning и не
+        # успела ничего ответить (finish_reason="length") — это тоже валидный результат
+        # генерации (а не сбой запроса), поэтому нормализуем в пустую строку, а не падаем.
+        content = response.json()["choices"][0]["message"]["content"]
+        return content or ""
