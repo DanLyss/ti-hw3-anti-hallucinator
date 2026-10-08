@@ -20,6 +20,20 @@ def test_sample_strings_contain_both_labels(testcase_id):
     assert labels == {True, False}, f"{testcase_id}: нет примеров обоих классов: {labels}"
 
 
+@pytest.mark.parametrize("testcase_id", list(TESTCASES.keys()))
+def test_sample_strings_are_balanced_and_large_enough(testcase_id):
+    samples = TESTCASES[testcase_id].sample_strings()
+    positives = [w for w, label in samples if label]
+    negatives = [w for w, label in samples if not label]
+    assert len(positives) == len(negatives) >= 15
+    assert len(set(positives)) == len(positives) and len(set(negatives)) == len(negatives)
+
+
+def test_sample_strings_fail_loudly_when_candidates_are_not_enough():
+    with pytest.raises(ValueError, match="basic"):
+        TESTCASES["basic"].sample_strings(per_label=1000)
+
+
 @pytest.mark.parametrize(
     "word,expected",
     [("", False), ("1", True), ("010", True), ("1010", False), ("0", False)],
