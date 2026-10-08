@@ -1,0 +1,52 @@
+# Конфигурация моделей для пайплайна. Ключи/секреты — в .env, не здесь.
+models:
+  chatgpt:
+    provider: openai
+    # У официального OpenAI-ключа баланс $0 ("no credits remaining"). GPT-6 Astra вдобавок
+    # стоит $10/$50 за 1M токенов — дорого само по себе. Решение то же, что и для DeepSeek/
+    # Qwen ниже: OpenRouter, ключ с $50 бесплатного кредита до 20.10.2026 (задание не требует
+    # именно версии GPT-6 — в табличке ПДФ это просто пример названия колонки).
+    base_url: https://openrouter.ai/api/v1
+    model_name: openai/gpt-4o-mini
+    temperature: 0.7
+    max_tokens: 2048
+  deepseek:
+    provider: deepseek
+    # У официального DeepSeek API тоже баланс $0 (Insufficient Balance). Тот же ключ
+    # OpenRouter, что и у остальных двух моделей (см. GET https://openrouter.ai/api/v1/key).
+    # deepseek-v4-flash — reasoning-модель, на реальном промпте сжигала весь max_tokens на
+    # внутренние "размышления" и не оставляла ничего на content (проверено, content=null,
+    # finish_reason=length). deepseek-chat — не reasoning, отвечает сразу автоматом,
+    # 0 reasoning_tokens на тесте, $0.00016 за реальный запрос.
+    base_url: https://openrouter.ai/api/v1
+    model_name: deepseek/deepseek-chat
+    temperature: 0.7
+    max_tokens: 2048
+  qwen:
+    provider: qwen
+    # :free вариант отпадает не только из-за 429 (перегрузка shared-пула), но и потому что
+    # у бесплатных моделей на OpenRouter лимит 50 запросов/день суммарно — а нам нужно 250
+    # (5 тесткейсов x 50). qwen/qwen3.8-27b (без суффикса) оказался reasoning-моделью —
+    # на реальном dry run 3 из 5 тесткейсов вернули ПУСТОЙ ответ (весь max_tokens=1500 ушёл
+    # на скрытые "размышления", деньги при этом всё равно списались). qwen3-30b-a3b-instruct-2507
+    # ("-instruct", не "-thinking") отвечает сразу, 0 reasoning_tokens на обоих проверенных
+    # тесткейсах (в т.ч. на employer/intersection, где старая модель молчала), и вдобавок
+    # дешевле: $0.048/$0.193 за 1M. Ключ — OpenRouter (sk-or-v1-...), $50 кредита до 20.10.2026.
+    base_url: https://openrouter.ai/api/v1
+    model_name: qwen/qwen3-30b-a3b-instruct-2507
+    temperature: 0.7
+    max_tokens: 2048
+  gpt-oss:
+    provider: openai
+    # Контрольная "умная" модель: проверить, что почти 0% корректных у трёх основных — это
+    # слабость моделей, а не баг оценки. Reasoning-модель, поэтому max_tokens больше, чем у
+    # остальных (у deepseek-v4-flash/qwen3.8 при 1500-2048 всё уходило в "размышления",
+    # content=null). При total_credits=0 OpenRouter резервировал max_tokens под каждый
+    # параллельный запрос и отдавал 402 ("can only afford 5649") — после пополнения на $5
+    # ограничение ушло. $0.037/$0.17 за 1M, ~$0.00015 за реальный запрос. Ключ тот же OpenRouter.
+    base_url: https://openrouter.ai/api/v1
+    model_name: openai/gpt-oss-120b
+    temperature: 0.7
+    max_tokens: 16000
+
+runs_per_testcase: 50
