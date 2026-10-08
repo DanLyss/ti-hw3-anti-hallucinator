@@ -38,7 +38,7 @@ def evaluate_file(model: str, testcase_id: str, run_id: str, path: Path) -> RunR
     except ParseError as exc:
         return RunResult(model, testcase_id, run_id, False, exc.violations, None, None, None, str(path))
 
-    is_valid, violations = validate(automaton)
+    is_valid, violations = validate(automaton, expected_alphabet_size=len(testcase.alphabet))
     deterministic = is_deterministic(automaton)
 
     try:

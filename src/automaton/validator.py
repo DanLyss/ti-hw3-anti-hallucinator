@@ -7,9 +7,13 @@ def _check_states(states: set[int], n: int, label: str, violations: list[str]) -
             violations.append(f"{label}: состояние {state} вне диапазона [0, {n})")
 
 
-def validate(automaton: Automaton) -> tuple[bool, list[str]]:
+def validate(automaton: Automaton, expected_alphabet_size: int | None = None) -> tuple[bool, list[str]]:
     """Семантические проверки корректности формата (не путать с парсингом текста):
-    диапазоны индексов состояний/символов, отсутствие переходов из/в несуществующие состояния.
+    диапазоны индексов состояний/символов, отсутствие переходов из/в несуществующие состояния,
+    правильно ли посчитаны n и m. Заявленное n сверяем с реально упомянутыми состояниями
+    (завышенное n — "фантомные" состояния, которых нет ни в стартах, ни в финалах, ни в
+    переходах; заниженное ловится проверкой диапазонов), m — с размером алфавита тесткейса,
+    если он передан.
     """
     violations: list[str] = []
 
@@ -17,6 +21,10 @@ def validate(automaton: Automaton) -> tuple[bool, list[str]]:
         violations.append(f"число состояний n должно быть положительным, получено {automaton.n}")
     if automaton.m <= 0:
         violations.append(f"размер алфавита m должен быть положительным, получено {automaton.m}")
+    if expected_alphabet_size is not None and automaton.m != expected_alphabet_size:
+        violations.append(
+            f"размер алфавита m={automaton.m} не совпадает с алфавитом задачи ({expected_alphabet_size} символов)"
+        )
 
     if automaton.n > 0:
         _check_states(automaton.starts, automaton.n, "стартовое состояние", violations)
@@ -33,7 +41,22 @@ def validate(automaton: Automaton) -> tuple[bool, list[str]]:
                         f"переход в несуществующее состояние {target} (n={automaton.n})"
                     )
 
+        _check_all_states_mentioned(automaton, violations)
+
     return (len(violations) == 0, violations)
+
+
+def _check_all_states_mentioned(automaton: Automaton, violations: list[str]) -> None:
+    mentioned = automaton.starts | automaton.finals
+    for (state, _), targets in automaton.transitions.items():
+        mentioned |= {state} | targets
+    unmentioned = sorted(set(range(automaton.n)) - mentioned)
+    if unmentioned:
+        shown = ", ".join(map(str, unmentioned[:5])) + (", ..." if len(unmentioned) > 5 else "")
+        violations.append(
+            f"заявлено n={automaton.n}, но {len(unmentioned)} состояний нигде не упоминаются "
+            f"(ни в стартах, ни в финалах, ни в переходах): {shown}"
+        )
 
 
 def is_deterministic(automaton: Automaton) -> bool:
