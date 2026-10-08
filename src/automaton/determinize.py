@@ -1,6 +1,7 @@
 from collections import deque
 
 from src.automaton.model import Automaton
+from src.automaton.validator import is_deterministic
 
 
 class TooManyStatesError(Exception):
@@ -15,7 +16,13 @@ def determinize(automaton: Automaton, max_states: int = 20_000) -> Automaton:
     заранее. Если для (подмножество, символ) объединение переходов пусто, переход просто
     не добавляется (частичный DFA) — специально не заводим фиктивное sink-состояние,
     чтобы не раздувать число состояний искусственно (решение задокументировано в
-    ARCHITECTURE.md §5)."""
+    ARCHITECTURE.md §5).
+
+    Если вход уже детерминированный, подмножества не строим: все они были бы одноэлементными,
+    и результат — это просто исходный DFA без недостижимых состояний (см. _trim_unreachable)."""
+    if is_deterministic(automaton):
+        return _trim_unreachable(automaton)
+
     start_subset = frozenset(automaton.starts)
     subset_to_index: dict[frozenset[int], int] = {start_subset: 0}
     queue: deque[frozenset[int]] = deque([start_subset])
@@ -50,5 +57,35 @@ def determinize(automaton: Automaton, max_states: int = 20_000) -> Automaton:
         m=automaton.m,
         starts={0},
         finals=finals,
+        transitions=transitions,
+    )
+
+
+def _trim_unreachable(dfa: Automaton) -> Automaton:
+    """DFA -> тот же DFA только из достижимых от старта состояний. Обход и нумерация — в том же
+    порядке (BFS, символы по возрастанию), что и в построении подмножеств, поэтому результат
+    совпадает с тем, что дал бы determinize() на этом же входе, только без лишней работы."""
+    (start,) = dfa.starts
+    state_to_index: dict[int, int] = {start: 0}
+    queue: deque[int] = deque([start])
+    transitions: dict[tuple[int, int], set[int]] = {}
+
+    while queue:
+        state = queue.popleft()
+        for symbol in range(dfa.m):
+            targets = dfa.transitions.get((state, symbol))
+            if not targets:
+                continue
+            (target,) = targets
+            if target not in state_to_index:
+                state_to_index[target] = len(state_to_index)
+                queue.append(target)
+            transitions[(state_to_index[state], symbol)] = {state_to_index[target]}
+
+    return Automaton(
+        n=len(state_to_index),
+        m=dfa.m,
+        starts={0},
+        finals={index for state, index in state_to_index.items() if state in dfa.finals},
         transitions=transitions,
     )

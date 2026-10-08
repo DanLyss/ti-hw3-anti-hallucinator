@@ -86,3 +86,31 @@ def test_raises_when_exceeding_max_states():
     nfa = Automaton(n=k + 1, m=2, starts={0}, finals={k}, transitions=transitions)
     with pytest.raises(TooManyStatesError):
         determinize(nfa, max_states=10)
+
+
+def test_deterministic_input_drops_unreachable_states_only():
+    # DFA из 4 состояний, состояние 3 недостижимо (в него никто не ведёт), финал={3,1}.
+    # Ожидаем тот же автомат на 3 состояниях: 0 -0-> 1 -1-> 2, финальным остаётся только 1.
+    dfa_in = Automaton(
+        n=4, m=2, starts={0}, finals={1, 3},
+        transitions={(0, 0): {1}, (1, 1): {2}, (2, 0): {0}, (3, 0): {0}},
+    )
+    dfa = determinize(dfa_in)
+    assert dfa.n == 3
+    assert dfa.starts == {0}
+    assert dfa.finals == {1}
+    assert dfa.transitions == {(0, 0): {1}, (1, 1): {2}, (2, 0): {0}}
+
+
+def test_deterministic_input_gives_same_result_as_subset_construction(monkeypatch):
+    # Ранний выход для DFA не должен ничего менять по сравнению с честным построением
+    # подмножеств: проверяем на эталонных DFA всех тесткейсов с отключённым ранним выходом.
+    import src.automaton.determinize as det
+
+    for name in ["basic", "intersection", "personal", "employer"]:
+        dfa_in = parse((FIXTURES / f"reference_{name}.txt").read_text())
+        fast = determinize(dfa_in)
+        with monkeypatch.context() as m:
+            m.setattr(det, "is_deterministic", lambda _: False)
+            slow = determinize(dfa_in)
+        assert fast == slow, name
