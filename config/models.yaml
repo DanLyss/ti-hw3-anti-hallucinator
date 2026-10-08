@@ -36,5 +36,17 @@ models:
     model_name: qwen/qwen3-30b-a3b-instruct-2507
     temperature: 0.7
     max_tokens: 2048
+  gpt-oss:
+    provider: openai
+    # Контрольная "умная" модель: проверить, что почти 0% корректных у трёх основных — это
+    # слабость моделей, а не баг оценки. Reasoning-модель, поэтому max_tokens больше, чем у
+    # остальных (у deepseek-v4-flash/qwen3.8 при 1500-2048 всё уходило в "размышления",
+    # content=null). При total_credits=0 OpenRouter резервировал max_tokens под каждый
+    # параллельный запрос и отдавал 402 ("can only afford 5649") — после пополнения на $5
+    # ограничение ушло. $0.037/$0.17 за 1M, ~$0.00015 за реальный запрос. Ключ тот же OpenRouter.
+    base_url: https://openrouter.ai/api/v1
+    model_name: openai/gpt-oss-120b
+    temperature: 0.7
+    max_tokens: 16000
 
 runs_per_testcase: 50
