@@ -103,3 +103,21 @@ def test_minimize_to_file_writes_parseable_automaton(tmp_path):
     minimal = minimize_to_file(_reference("4th_symbol"), out)  # NFA на входе — детерминизируется
     assert out.read_text(encoding="utf-8") == to_text(minimal)
     assert parse(out.read_text(encoding="utf-8")) == minimal
+
+
+def test_lecture_example_1():
+    # Пример 1 лекции 4 (рис. 2–3): 6 состояний над {a, b} (a = 0, b = 1), язык |w|_a ≡ 0 (mod 3).
+    # q5 недостижимо; R0 = {q2, q3, q4}, R1 = {q0, q1}; R0 расщепляется по a на {q2, q3} и {q4} —
+    # минимальный автомат из 3 состояний: {q0, q1} -a-> {q2, q3} -a-> {q4} -a-> {q0, q1}, по b — петли.
+    a, b = 0, 1
+    dfa = Automaton(n=6, m=2, starts={0}, finals={0, 1}, transitions={
+        (0, b): {1}, (1, b): {0}, (0, a): {2}, (1, a): {3},
+        (2, b): {3}, (2, a): {4}, (3, b): {3}, (3, a): {4},
+        (4, b): {4}, (4, a): {1}, (5, b): {5}, (5, a): {2},
+    })
+    minimal = minimize(dfa)
+    assert minimal.n == 3
+    assert minimal.finals == {0}
+    assert minimal.transitions == {
+        (0, a): {1}, (0, b): {0}, (1, a): {2}, (1, b): {1}, (2, a): {0}, (2, b): {2},
+    }
