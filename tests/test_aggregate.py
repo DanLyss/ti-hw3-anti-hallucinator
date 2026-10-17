@@ -53,3 +53,15 @@ def test_aggregate_handles_all_dfa_sizes_missing():
     results = [_row("basic", "modelA", False, False, None, False)]
     stats = aggregate(results)
     assert stats[0].avg_dfa_states is None
+
+
+def test_aggregate_computes_equivalence_and_min_dfa_size():
+    rows = [_row("basic", "modelA", True, True, 5, True), _row("basic", "modelA", True, True, 7, True),
+            _row("basic", "modelA", False, False, None, None)]
+    rows[0].update(is_equivalent=True, min_dfa_state_count=3)
+    rows[1].update(is_equivalent=False, min_dfa_state_count=5)  # прошёл выборку, но не эквивалентен
+    rows[2].update(is_equivalent=None, min_dfa_state_count=None)
+    stats = {(s.testcase, s.model): s for s in aggregate(rows)}
+    basic = stats[("basic", "modelA")]
+    assert basic.equivalent_pct == pytest.approx(100 / 3)
+    assert basic.avg_min_dfa_states == 4.0

@@ -17,6 +17,8 @@ _METRICS: list[tuple[str, Callable[[TestcaseModelStats], str]]] = [
     ("Детерминированные, %", lambda s: f"{s.deterministic_pct:.0f}%"),
     ("Среднее число состояний в DFA", lambda s: f"{s.avg_dfa_states:.1f}" if s.avg_dfa_states is not None else "—"),
     ("Корректные по симуляции, %", lambda s: f"{s.simulation_correct_pct:.0f}%"),
+    ("Среднее число состояний в минимизированном DFA", lambda s: f"{s.avg_min_dfa_states:.1f}" if s.avg_min_dfa_states is not None else "—"),
+    ("Корректные автоматы, %", lambda s: f"{s.equivalent_pct:.0f}%"),
 ]
 
 

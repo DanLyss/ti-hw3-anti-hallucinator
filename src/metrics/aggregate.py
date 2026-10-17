@@ -18,6 +18,8 @@ class TestcaseModelStats:
     deterministic_pct: float
     avg_dfa_states: float | None
     simulation_correct_pct: float
+    avg_min_dfa_states: float | None = None
+    equivalent_pct: float = 0.0
 
 
 def load_results(results_path: Path = DEFAULT_RESULTS_PATH) -> list[dict]:
@@ -32,6 +34,8 @@ def _stats_for(testcase: str, model: str, rows: list[dict]) -> TestcaseModelStat
     sim_correct = sum(1 for r in rows if r["is_simulation_correct"])
     dfa_sizes = [r["dfa_state_count"] for r in rows if r["dfa_state_count"] is not None]
     avg_dfa = sum(dfa_sizes) / len(dfa_sizes) if dfa_sizes else None
+    min_sizes = [r["min_dfa_state_count"] for r in rows if r.get("min_dfa_state_count") is not None]
+    equivalent = sum(1 for r in rows if r.get("is_equivalent"))
     return TestcaseModelStats(
         testcase=testcase,
         model=model,
@@ -40,6 +44,8 @@ def _stats_for(testcase: str, model: str, rows: list[dict]) -> TestcaseModelStat
         deterministic_pct=100 * deterministic / total,
         avg_dfa_states=avg_dfa,
         simulation_correct_pct=100 * sim_correct / total,
+        avg_min_dfa_states=sum(min_sizes) / len(min_sizes) if min_sizes else None,
+        equivalent_pct=100 * equivalent / total,
     )
 
 
