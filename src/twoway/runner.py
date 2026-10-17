@@ -19,6 +19,9 @@ MAX_FAILURES_IN_ROW = 30  # ~полчаса без сети подряд — т�
 
 
 def _log(message: str) -> None:
+    # Консоль Windows по умолчанию cp1252 — без этого кириллица в логе роняла поток раннера.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     print(f"[{datetime.now():%H:%M:%S}] {message}", flush=True)
 
 

@@ -18,8 +18,9 @@ class TwoWayTestCase:
 
 
 def _basic_ground_truth(w: str) -> bool:
-    # (0|1)0(0|1)^{12}: ровно 14 символов, второй — 0
-    return len(w) == 14 and w[1] == "0"
+    # (0|1)^*0(0|1)^{12}: 13-й символ с конца — 0. В табличке листка звёздочка потерялась
+    # при вёрстке TeX, преподаватель подтвердил исправленный вариант.
+    return len(w) >= 13 and w[-13] == "0"
 
 
 def _grob_ground_truth(w: str) -> bool:
@@ -30,7 +31,7 @@ def _grob_ground_truth(w: str) -> bool:
 TESTCASES_2DFA: dict[str, TwoWayTestCase] = {
     "2dfa_basic": TwoWayTestCase(
         id="2dfa_basic",
-        description=r"Язык (0|1)0(0|1)^{12}, алфавит \{0 , 1\}",
+        description=r"Язык (0|1)^*0(0|1)^{12}, алфавит \{0 , 1\}",
         alphabet=("0", "1"),
         ground_truth=_basic_ground_truth,
     ),
@@ -69,14 +70,17 @@ _A_DELTA = {(0, 0): 0, (0, 1): 1, (1, 0): 0, (1, 1): 2, (2, 0): 3, (2, 1): 2, (3
 
 
 def ground_truth_min_dfa(testcase_id: str) -> Automaton:
-    """Минимальный DFA для тесткейса. basic: сводка — (длина до 15, второй символ — 0?);
+    """Минимальный DFA для тесткейса. basic: сводка — последние 13 символов как 13-битное
+    число (короткое слово дополнено единицами слева: «13-го с конца нет» ≡ «он не 0»),
+    ровно 2^13 = 8192 состояний;
     grob: сводка — функция переходов A на прочитанном префиксе w (g: Q_A -> Q_A), тогда
     ww ∈ L(A) ⟺ g(g(0)) не мёртвое."""
     if testcase_id == "2dfa_basic":
+        window = (1 << 13) - 1
         dfa = _dfa_from_summary(
-            2, (0, True),
-            lambda s, c: (min(s[0] + 1, 15), s[1] and not (s[0] == 1 and c == 1)),
-            lambda s: s[0] == 14 and s[1],
+            2, window,
+            lambda s, c: ((s << 1) | c) & window,
+            lambda s: not s >> 12,  # старший бит окна — 13-й символ с конца — равен 0
         )
     elif testcase_id == "2dfa_grob":
         dfa = _dfa_from_summary(

@@ -163,7 +163,7 @@ def test_conversion_rejects_nondeterministic_and_limits_size():
 
 # --- тесткейсы и ground truth ---
 
-@pytest.mark.parametrize("testcase_id, expected_states", [("2dfa_basic", 16), ("2dfa_grob", 8)])
+@pytest.mark.parametrize("testcase_id, expected_states", [("2dfa_basic", 2**13), ("2dfa_grob", 8)])
 def test_ground_truth_min_dfa_matches_predicate(testcase_id, expected_states):
     testcase = TESTCASES_2DFA[testcase_id]
     dfa = ground_truth_min_dfa(testcase_id)
@@ -176,7 +176,7 @@ def test_ground_truth_min_dfa_matches_predicate(testcase_id, expected_states):
 
 @pytest.mark.parametrize(
     "word, expected",
-    [("0" * 14, True), ("10" + "1" * 12, True), ("11" + "0" * 12, False), ("0" * 13, False), ("0" * 15, False)],
+    [("0" * 13, True), ("1" + "0" + "1" * 12, True), ("0" + "1" * 12, True), ("1" * 13, False), ("0" * 12, False), ("01" + "0" * 12, False)],
 )
 def test_basic_ground_truth(word, expected):
     assert TESTCASES_2DFA["2dfa_basic"].ground_truth(word) == expected
@@ -262,3 +262,22 @@ def test_evaluator_and_report(tmp_path):
     assert "Действительно 2DFA, % (modelA)" in report
     assert "| total |" in report
     assert len(json.loads(results_path.read_text(encoding="utf-8").splitlines()[0])) > 0
+
+
+def test_correct_2dfa_for_basic_is_exponentially_smaller_than_its_dfa():
+    # Пример 2 лекции для n = 13 над {0, 1}: едет к ⊣, отсчитывает 13 символов назад, проверяет 0.
+    # 15 состояний 2DFA против 2^13 = 8192 у минимального DFA — и после конвертации эквивалентен ground truth.
+    from src.automaton.equivalence import are_equivalent
+
+    k, zero, one = 13, 0, 1
+    t = {(0, 2): {(0, 1)}, (0, zero): {(0, 1)}, (0, one): {(0, 1)}, (0, 3): {(1, -1)}}
+    for i in range(1, k):
+        t[(i, zero)] = t[(i, one)] = {(i + 1, -1)}
+    t[(k, zero)] = {(k + 1, 1)}
+    t[(k + 1, zero)] = t[(k + 1, one)] = {(k + 1, 1)}
+    automaton = TwoWayAutomaton(n=k + 2, m=2, starts={0}, finals={k + 1}, transitions=t)
+
+    dfa = two_way_to_dfa(automaton)
+    assert is_really_2dfa(automaton)
+    assert minimize(dfa).n == 2**13
+    assert are_equivalent(dfa, ground_truth_min_dfa("2dfa_basic"))
