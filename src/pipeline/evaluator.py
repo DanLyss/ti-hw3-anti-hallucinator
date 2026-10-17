@@ -2,7 +2,12 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from functools import cache
+
 from src.automaton.determinize import TooManyStatesError, determinize
+from src.automaton.equivalence import are_equivalent
+from src.automaton.minimize import minimize
+from src.automaton.model import Automaton
 from src.automaton.parser import ParseError, parse
 from src.automaton.simulator import check_correctness
 from src.automaton.validator import is_deterministic, validate
@@ -11,6 +16,7 @@ from src.testcases import TESTCASES
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_RAW = PROJECT_ROOT / "data" / "raw"
 DEFAULT_RESULTS_PATH = PROJECT_ROOT / "data" / "results" / "runs.jsonl"
+GROUND_TRUTH_DIR = PROJECT_ROOT / "data" / "ground_truth"  # минимальные DFA, см. домашку 5
 
 
 @dataclass
@@ -24,6 +30,13 @@ class RunResult:
     dfa_state_count: int | None
     is_simulation_correct: bool | None
     raw_file_path: str
+    min_dfa_state_count: int | None = None
+    is_equivalent: bool | None = None
+
+
+@cache
+def load_ground_truth(testcase_id: str) -> Automaton:
+    return parse((GROUND_TRUTH_DIR / f"{testcase_id}.txt").read_text(encoding="utf-8"))
 
 
 def evaluate_file(model: str, testcase_id: str, run_id: str, path: Path) -> RunResult:
@@ -42,14 +55,22 @@ def evaluate_file(model: str, testcase_id: str, run_id: str, path: Path) -> RunR
     deterministic = is_deterministic(automaton)
 
     try:
-        dfa_state_count = determinize(automaton).n
+        dfa = determinize(automaton)
     except TooManyStatesError:
-        dfa_state_count = None
+        dfa = None
+    dfa_state_count = dfa.n if dfa is not None else None
+    # Домашка 5: точная проверка корректности — эквивалентность с минимальным ground truth DFA
+    # (а не совпадение на выборке строк), плюс размер минимизированного DFA модели.
+    min_dfa_state_count = minimize(dfa).n if dfa is not None else None
+    is_equivalent = are_equivalent(automaton, load_ground_truth(testcase_id)) if dfa is not None else None
 
     samples = [(testcase.encode(w), label) for w, label in testcase.sample_strings()]
     is_correct = check_correctness(automaton, samples)
 
-    return RunResult(model, testcase_id, run_id, is_valid, violations, deterministic, dfa_state_count, is_correct, str(path))
+    return RunResult(
+        model, testcase_id, run_id, is_valid, violations, deterministic, dfa_state_count, is_correct, str(path),
+        min_dfa_state_count, is_equivalent,
+    )
 
 
 def evaluate_all(
