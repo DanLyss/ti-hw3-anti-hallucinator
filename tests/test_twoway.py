@@ -217,6 +217,26 @@ def test_runner_writes_runs_and_skips_existing(tmp_path):
     assert client.calls == 3
 
 
+class _FlakyClient(LLMClient):
+    """Первые `failures` вызовов падают, как при пропавшем интернете."""
+
+    def __init__(self, failures: int):
+        self.failures, self.calls = failures, 0
+
+    def generate(self, prompt: str) -> str:
+        self.calls += 1
+        if self.calls <= self.failures:
+            raise ConnectionError("нет сети")
+        return "ответ"
+
+
+def test_runner_survives_network_outage(tmp_path):
+    client = _FlakyClient(failures=3)
+    run_testcase("fake", client, "2dfa_basic", runs=2, out_root=tmp_path, pacing_seconds=0, outage_pause_seconds=0)
+    assert sorted(p.name for p in (tmp_path / "fake" / "2dfa_basic").iterdir()) == ["run_000.txt", "run_001.txt"]
+    assert client.calls == 5  # 3 падения + 2 успешных запроса, ничего не потеряно
+
+
 def test_evaluator_and_report(tmp_path):
     raw = tmp_path / "raw"
     out = raw / "modelA" / "2dfa_grob"
