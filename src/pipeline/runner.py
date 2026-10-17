@@ -87,7 +87,7 @@ def _build_client(cfg: dict) -> LLMClient:
 def main() -> None:
     load_dotenv()
     config = yaml.safe_load((PROJECT_ROOT / "config" / "models.yaml").read_text(encoding="utf-8"))
-    clients = {name: _build_client(cfg) for name, cfg in config["models"].items()}
+    clients = {name: _build_client(cfg) for name, cfg in config["models"].items() if not cfg.get("only_2dfa")}
     run_all(clients, runs_per_testcase=config.get("runs_per_testcase", 50))
 
 

@@ -1,0 +1,52 @@
+# Прогон 2DFA (домашка 5) на серверах GitHub — не зависит от интернета на ноутбуке.
+# Запускается при пуше этого файла в hw5 или вручную (Actions -> run-2dfa -> Run workflow).
+name: run-2dfa
+
+on:
+  push:
+    branches: [hw5]
+    paths: [".github/workflows/run_2dfa.yml"]
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Запросов на пару модель × тесткейс"
+        default: "20"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+
+      # Сначала тесты: если пайплайн сломан, платные запросы не отправляются.
+      - run: python -m pytest -q
+
+      - name: Запросы к моделям
+        env:
+          # Все модели идут через OpenRouter одним ключом (см. config/models.yaml).
+          OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python -m src.twoway.runner ${{ inputs.runs || '20' }} 2>&1 | tee run_2dfa.log
+
+      - name: Оценка и таблица
+        if: always()
+        run: |
+          python -m src.twoway.evaluator
+          python -m src.twoway.report
+          cat reports/final_table_2dfa.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()  # даже если прогон упал — сохраняем то, что успели собрать
+        with:
+          name: raw-2dfa
+          path: |
+            data/raw_2dfa
+            data/results/runs_2dfa.jsonl
+            reports/final_table_2dfa.md
+            run_2dfa.log

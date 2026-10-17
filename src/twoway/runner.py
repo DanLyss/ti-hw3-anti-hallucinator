@@ -84,7 +84,11 @@ def run_all_2dfa(
 def main(runs: int = RUNS_PER_TESTCASE_2DFA) -> None:
     load_dotenv(PROJECT_ROOT / ".env")
     config = yaml.safe_load((PROJECT_ROOT / "config" / "models.yaml").read_text(encoding="utf-8"))
-    clients = {name: _build_client(cfg) for name, cfg in config["models"].items()}
+    # max_tokens_2dfa — отдельный лимит токенов для 2DFA (reasoning-моделям на 2dfa_grob нужно больше)
+    clients = {
+        name: _build_client({**cfg, "max_tokens": cfg.get("max_tokens_2dfa", cfg.get("max_tokens"))})
+        for name, cfg in config["models"].items()
+    }
     run_all_2dfa(clients, runs=runs)
 
 
