@@ -1,0 +1,69 @@
+name: run-regex
+
+on:
+  push:
+    branches: [hw8]
+    paths: [".github/workflows/run_regex.yml"]
+  pull_request:
+    branches: [hw5]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regex-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+
+  experiment:
+    if: github.event_name != 'pull_request'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - name: Restore collected answers when available
+        run: |
+          if [ -f data/raw_regex.tar.gz ]; then
+            tar -xzf data/raw_regex.tar.gz
+          fi
+      - name: Collect 20 answers per model and testcase
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          QWEN_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          python -m src.regex.balance
+          python -m src.regex.runner --runs 20
+      - name: Evaluate both representations and write report
+        if: always()
+        run: |
+          python -m src.pipeline.evaluator
+          python -m src.regex.evaluator
+          python -m src.regex.report
+          cat reports/final_table_regex.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regex-experiment
+          path: |
+            data/raw_regex/
+            data/results/runs_regex.jsonl
+            data/results/runs.jsonl
+            reports/final_table_regex.md
+            reports/openrouter_balance.json
