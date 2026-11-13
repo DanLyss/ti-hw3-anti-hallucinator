@@ -41,30 +41,30 @@ ANTLR4 → дерево разбора → ε-NFA Томпсона → удал�
 
 | Тесткейс | Модель | n автоматов | Автоматы, % | n регулярок | Регулярки, % | Разность, п.п. |
 |---|---|---:|---:|---:|---:|---:|
-| basic | chatgpt | 0 | — | 0 | — | — |
-| basic | deepseek | 0 | — | 0 | — | — |
-| basic | qwen | 0 | — | 0 | — | — |
-| basic | gpt-oss | 0 | — | 0 | — | — |
-| 4th-symbol | chatgpt | 0 | — | 0 | — | — |
-| 4th-symbol | deepseek | 0 | — | 0 | — | — |
-| 4th-symbol | qwen | 0 | — | 0 | — | — |
-| 4th-symbol | gpt-oss | 0 | — | 0 | — | — |
-| employer | chatgpt | 0 | — | 0 | — | — |
-| employer | deepseek | 0 | — | 0 | — | — |
-| employer | qwen | 0 | — | 0 | — | — |
-| employer | gpt-oss | 0 | — | 0 | — | — |
-| intersection | chatgpt | 0 | — | 0 | — | — |
-| intersection | deepseek | 0 | — | 0 | — | — |
-| intersection | qwen | 0 | — | 0 | — | — |
-| intersection | gpt-oss | 0 | — | 0 | — | — |
-| personal | chatgpt | 0 | — | 0 | — | — |
-| personal | deepseek | 0 | — | 0 | — | — |
-| personal | qwen | 0 | — | 0 | — | — |
-| personal | gpt-oss | 0 | — | 0 | — | — |
-| Итого | chatgpt | 0 | — | 0 | — | — |
-| Итого | deepseek | 0 | — | 0 | — | — |
-| Итого | qwen | 0 | — | 0 | — | — |
-| Итого | gpt-oss | 0 | — | 0 | — | — |
+| basic | chatgpt | 50 | 0.0 | 0 | — | — |
+| basic | deepseek | 50 | 0.0 | 0 | — | — |
+| basic | qwen | 50 | 0.0 | 0 | — | — |
+| basic | gpt-oss | 50 | 90.0 | 0 | — | — |
+| 4th-symbol | chatgpt | 50 | 0.0 | 0 | — | — |
+| 4th-symbol | deepseek | 50 | 2.0 | 0 | — | — |
+| 4th-symbol | qwen | 50 | 0.0 | 0 | — | — |
+| 4th-symbol | gpt-oss | 50 | 100.0 | 0 | — | — |
+| employer | chatgpt | 50 | 0.0 | 0 | — | — |
+| employer | deepseek | 50 | 0.0 | 0 | — | — |
+| employer | qwen | 50 | 0.0 | 0 | — | — |
+| employer | gpt-oss | 50 | 48.0 | 0 | — | — |
+| intersection | chatgpt | 50 | 0.0 | 0 | — | — |
+| intersection | deepseek | 50 | 0.0 | 0 | — | — |
+| intersection | qwen | 50 | 0.0 | 0 | — | — |
+| intersection | gpt-oss | 50 | 88.0 | 0 | — | — |
+| personal | chatgpt | 50 | 0.0 | 0 | — | — |
+| personal | deepseek | 50 | 44.0 | 0 | — | — |
+| personal | qwen | 50 | 22.0 | 0 | — | — |
+| personal | gpt-oss | 50 | 100.0 | 0 | — | — |
+| Итого | chatgpt | 250 | 0.0 | 0 | — | — |
+| Итого | deepseek | 250 | 9.2 | 0 | — | — |
+| Итого | qwen | 250 | 4.4 | 0 | — | — |
+| Итого | gpt-oss | 250 | 85.2 | 0 | — | — |
 
 ## Наблюдения и интерпретация
 
