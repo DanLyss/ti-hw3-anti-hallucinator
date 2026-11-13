@@ -37,6 +37,11 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install -r requirements.txt
+      - name: Restore collected answers when available
+        run: |
+          if [ -f data/raw_regex.tar.gz ]; then
+            tar -xzf data/raw_regex.tar.gz
+          fi
       - name: Collect 20 answers per model and testcase
         env:
           OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

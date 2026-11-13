@@ -23,7 +23,8 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: python -m src.regex.balance
-      - uses: actions/upload-artifact@v4
+      - name: Save current credit snapshot
+        uses: actions/upload-artifact@v4
         with:
           name: model-balance-${{ github.run_attempt }}
           path: reports/openrouter_balance.json

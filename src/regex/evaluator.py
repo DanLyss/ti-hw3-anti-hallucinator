@@ -4,6 +4,7 @@ from pathlib import Path
 
 from src.automaton.determinize import TooManyStatesError, determinize
 from src.automaton.equivalence import are_equivalent
+from src.automaton.simulator import simulate
 from src.pipeline.evaluator import load_ground_truth
 from src.pipeline.runner import PROJECT_ROOT
 from src.regex.parser import RegexFormatError, RegexResourceError, parse_regex
@@ -18,7 +19,8 @@ RESULTS = PROJECT_ROOT / "data/results/runs_regex.jsonl"
 def evaluate_text(text, testcase_id):
     case = TESTCASES[testcase_id]
     result = {"length": len("".join(text.split())), "is_format_valid": None,
-              "is_correct": None, "error": None, "nfa_states": None, "dfa_states": None}
+              "is_correct": None, "error": None, "nfa_states": None, "dfa_states": None,
+              "counterexample": None}
     try:
         tree = parse_regex(text, case.alphabet)
     except RegexFormatError as exc:
@@ -31,9 +33,19 @@ def evaluate_text(text, testcase_id):
     try:
         enfa = from_tree(tree, case.alphabet)
         result["nfa_states"] = enfa.n
-        dfa = determinize(enfa.without_epsilon())
+        nfa = enfa.without_epsilon()
+        truth = load_ground_truth(testcase_id)
+        # A mismatching word is an exact proof of non-equivalence, even if the
+        # full subset construction would exceed the state limit. Agreement on
+        # this finite set is never treated as proof of equivalence.
+        for word in dict.fromkeys(["", *(w for w, _ in case.sample_strings())]):
+            encoded = case.encode(word)
+            if simulate(nfa, encoded) != simulate(truth, encoded):
+                result.update(is_correct=False, counterexample=word)
+                return result
+        dfa = determinize(nfa)
         result["dfa_states"] = dfa.n
-        result["is_correct"] = are_equivalent(dfa, load_ground_truth(testcase_id))
+        result["is_correct"] = are_equivalent(dfa, truth)
     except (TooManyStatesError, RecursionError) as exc:
         result["error"] = type(exc).__name__
     return result

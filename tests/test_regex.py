@@ -85,6 +85,17 @@ def test_valid_but_wrong_language():
     assert r["is_correct"] is False
 
 
+def test_counterexample_proves_false_before_exponential_determinization():
+    # This observed answer exceeded 20000 subsets, but accepts the empty word
+    # which the basic ground truth rejects. The mismatch is an exact witness.
+    text = "(10*01*10*01*10*01*10*|0(10*01*10*01*10*01*10*)*1(10*01*10*01*10*01*10*)*|1(10*01*10*01*10*01*10*)*0(10*01*10*01*10*01*10*)*)*"
+    r = evaluate_text(text, "basic")
+    assert r["is_format_valid"] is True
+    assert r["is_correct"] is False
+    assert r["counterexample"] == ""
+    assert r["error"] is None
+
+
 def test_evaluator_empty_raw_root(tmp_path):
     results = tmp_path / "results.jsonl"
     assert evaluate_all(tmp_path / "missing", results) == []
