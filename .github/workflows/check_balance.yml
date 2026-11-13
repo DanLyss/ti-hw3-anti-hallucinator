@@ -1,0 +1,29 @@
+name: check-model-balance
+
+on:
+  push:
+    branches: [hw8]
+    paths: [".github/workflows/check_balance.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  balance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - name: Read remaining OpenRouter credits
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python -m src.regex.balance
+      - uses: actions/upload-artifact@v4
+        with:
+          name: model-balance-${{ github.run_attempt }}
+          path: reports/openrouter_balance.json
